@@ -21,10 +21,17 @@ const FormularioPage = async ({ params }) => {
 
     const salvarCategoria = async (formData) => {
         'use server';
+
         const objeto = {
             codigo: formData.get('codigo'),
             nome: formData.get('nome')
+        };
+
+        // Validação simples no servidor
+        if (objeto.nome.length < 3) {
+            throw new Error("O nome deve ter pelo menos 3 caracteres.");
         }
+
         try {
             if (objeto.codigo == 0) {
                 await addCategoriaDB(objeto);
@@ -36,7 +43,22 @@ const FormularioPage = async ({ params }) => {
         }
         revalidatePath('/privado/categoria/');
         redirect('/privado/categoria');
-    }
+    };
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+
+        // Validação no lado do cliente
+        if (form.checkValidity() === false) {
+            event.stopPropagation();
+        } else {
+            const formData = new FormData(form);
+            salvarCategoria(formData);
+        }
+
+        form.classList.add('was-validated');
+    };
 
     return (
         <>
@@ -44,7 +66,7 @@ const FormularioPage = async ({ params }) => {
                 <div style={{ textAlign: 'center' }}>
                     <h2>Categoria</h2>
                 </div>
-                <form action={salvarCategoria}>
+                <Form noValidate onSubmit={handleSubmit}>
                     <div className="container">
                         <div className="row justify-content-center">
                             <div className="col-12 col-md-6">
@@ -60,8 +82,15 @@ const FormularioPage = async ({ params }) => {
                                     <FloatingLabel controlId="campoNome"
                                         label="Nome" className="mb-3">
                                         <Form.Control type="text"
-                                            defaultValue={categoria.nome} required
-                                            name="nome" />
+                                            defaultValue={categoria.nome}
+                                            name="nome"
+                                            required
+                                            minLength="3"
+                                            isInvalid={categoria.nome.length < 3}
+                                        />
+                                        <Form.Control.Feedback type="invalid">
+                                            O nome deve ter pelo menos 3 caracteres.
+                                        </Form.Control.Feedback>
                                     </FloatingLabel>
                                 </div>
                                 <div className="form-group text-center mt-3">
@@ -70,16 +99,12 @@ const FormularioPage = async ({ params }) => {
                                     </button>
                                 </div>
                             </div>
-
                         </div>
                     </div>
-
-                </form>
+                </Form>
             </Suspense>
         </>
-    )
-
-
-}
+    );
+};
 
 export default FormularioPage;
